@@ -598,6 +598,13 @@ Notes:
 - `crotchheight / stature` averages **0.480** for women, the same number the women's-sizing hand-over found. The
   men's `inseam: 0.45` ratio is probably low. PR 1 should fit men's on the **ANSUR II male** file: download it to
   the scratchpad only, the same way, and use the same columns. The men's power law has no thigh, rise or heights.
+- **Men's leg re-fit as built (2026-11-21).** The leg keys are now regressions on the ANSUR II male file
+  (4,082 men; `MENS_LEG_REGRESSION`), the same columns and method as the women's. R² / residual SD: thigh
+  0.85 / 2.26, knee 0.78 / 1.49, calf 0.71 / 1.61, heel–ankle 0.62 / 1.02, front rise 0.42 / 2.65, navel
+  height 0.84 / 2.07, hip height (`buttockheight`) 0.68 / 2.81, knee height 0.69 / 1.55, ankle height 0.25 /
+  0.49. `RISE_VERTICAL_RATIO.mens` checks out at 0.79 on the file. The biggest change is the front rise of
+  tall, lean men (190 / 80: 28.9 → 24.9 cm), which raises the band. Not re-fitted yet: the men's inseam
+  (`0.45 × height`) and the power-law girths, which would move men's tops.
 - Every new estimated key gets an entry in `ESTIMATED_BODY_SD_CM[bodyType]` (`uncertainty.ts:33`) from its
   residual SD, and `measurementHint` can name it ("measure your thigh").
 - New overrides worth a field on the body screen: underbust (bras, PR 6), thigh (pants, PR 1, optional), and
@@ -680,7 +687,8 @@ Split into 1a (commits 1–2, Medium, no visible change) and 1b (3–8).
 - **Body keys**: thigh, knee, calf, heel–ankle, front rise, navel / hip-line / knee heights.
   Women's from the ANSUR II female file (coefficients in `WOMENS_LEG_REGRESSION`, spreads in
   `uncertainty.ts`). Men's are assumed ratios of the ANSUR II male means; thigh, knee and calf ride
-  on the men's hips estimate rather than height, so they grow with weight. The hip line is
+  on the men's hips estimate rather than height, so they grow with weight (replaced by the men's
+  ANSUR II re-fit, §5). The hip line is
   `buttockheight` (where the seat girth is measured).
 - **Band height** is anchored at the navel, not the crotch:
   `waistHeight − RISE_VERTICAL_RATIO × (bodyFrontRise − garmentRise)`; at the survey mean this is

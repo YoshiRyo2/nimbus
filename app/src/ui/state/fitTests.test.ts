@@ -89,16 +89,20 @@ describe('bottoms', () => {
 
   const jean = findGarment('corvo-slim-jean')!;
   const preference = preferenceSpec(null, null);
+  // A body whose own front rise (≈ 27 cm) is longer than the jean's 25.5 cm, so the band sits below the navel.
+  const jeanBody = { heightCm: 178, weightKg: 88, bodyType: 'mens', overrides: { waistCm: 82 } } as const;
+  const jeanModel = estimateBody(jeanBody);
   const predictJean = () =>
-    predictionFor({ body, model, garment: jean, size: '32x32', preference, anchor: null, odds: sampleFit(model, jean, preference) });
+    predictionFor({ body: jeanBody, model: jeanModel, garment: jean, size: '32x32', preference, anchor: null, odds: sampleFit(jeanModel, jean, preference) });
 
   it('predictionFor a jean records waist, thigh and inseam', () => {
     const p = predictJean();
     expect(p.category).toBe('bottom');
-    expect(p.inseamCm).toBe(model.measurements.inseamCm);
-    expect(p.thighCm).toBe(model.measurements.thighCm);
+    expect(p.inseamCm).toBe(jeanModel.measurements.inseamCm);
+    expect(p.thighCm).toBe(jeanModel.measurements.thighCm);
     // The body at the band, not the navel waist.
-    expect(p.waistCm).toBeGreaterThan(model.measurements.waistCm);
+    expect(jeanModel.measurements.frontRiseCm).toBeGreaterThan(25.5);
+    expect(p.waistCm).toBeGreaterThan(jeanModel.measurements.waistCm);
     expect(p.waistLabel).toBe('fitted');
     expect(p.thighLabel).not.toBe('unknown');
     expect(p.lengthLabel).toBe('good'); // the inseam
@@ -131,7 +135,7 @@ describe('bottoms', () => {
       predicted_waist_label: 'fitted',
     });
     expect(Number(row!.p_waist_just_right)).toBeGreaterThan(0);
-    expect(Number(row!.inseam_cm)).toBeCloseTo(model.measurements.inseamCm, 1);
+    expect(Number(row!.inseam_cm)).toBeCloseTo(jeanModel.measurements.inseamCm, 1);
   });
 
   it('a top row leaves the bottoms columns blank', () => {

@@ -33,9 +33,10 @@ export const SAMPLER_SEED = 20261118;
  * Leg keys (pants). Women's: the ANSUR II residual SDs (WOMENS_LEG_REGRESSION in
  * body/estimateBody.ts: thigh 2.28, knee 1.91, calf 1.70, heel–ankle 0.98, front
  * rise 2.47, navel height 2.01, hip height 2.47, knee height 1.40 cm), with the
- * same rule: add half a cm, round up to the next half. Men's are ASSUMED and wider
- * (thigh 4, knee 3, calf 3, heel–ankle 2, front rise 3.5, heights 3 / 3 / 2.5):
- * their ratios ignore weight (heights) or ride on the hips estimate (girths).
+ * same rule: add half a cm, round up to the next half. Men's: the ANSUR II male
+ * residual SDs (MENS_LEG_REGRESSION: thigh 2.26, knee 1.49, calf 1.61, heel–ankle
+ * 1.02, front rise 2.65, navel height 2.07, hip height 2.81, knee height 1.55,
+ * ankle height 0.49 cm), by the same rule.
  */
 export const ESTIMATED_BODY_SD_CM: Record<BodyType, Record<MeasurementKey, number>> = {
   mens: {
@@ -46,16 +47,15 @@ export const ESTIMATED_BODY_SD_CM: Record<BodyType, Record<MeasurementKey, numbe
     torsoLengthCm: 3,
     armLengthCm: 2.5,
     shoulderWidthCm: 2,
-    thighCm: 4,
-    kneeCm: 3,
-    calfCm: 3,
+    thighCm: 3,
+    kneeCm: 2,
+    calfCm: 2.5,
     heelAnkleCm: 2,
     frontRiseCm: 3.5,
     waistHeightCm: 3,
-    hipHeightCm: 3,
+    hipHeightCm: 3.5,
     kneeHeightCm: 2.5,
-    // ASSUMED: the men's ratio, wider than the male regression's 0.49 cm residual.
-    ankleHeightCm: 1.2,
+    ankleHeightCm: 1,
   },
   womens: {
     chestCm: 5,

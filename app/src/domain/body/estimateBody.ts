@@ -21,9 +21,9 @@
  * Other lengths (arm, torso, shoulder width) are fixed fractions of height.
  *
  * Leg keys for pants (thigh, knee, calf, heel–ankle, front rise, and the navel,
- * hip-line and knee heights): women's are regressions on the same ANSUR II file
- * (WOMENS_LEG_REGRESSION); men's are ASSUMED ratios (MENS_LEG_RATIO) until the
- * men's ANSUR II re-fit, which is a later change.
+ * hip-line, knee and ankle heights) are regressions on height and weight: women's
+ * on the ANSUR II female file (WOMENS_LEG_REGRESSION), men's on the male file
+ * (MENS_LEG_REGRESSION).
  * ANSUR II is a military population, so treat every estimate as a starting point.
  */
 
@@ -128,31 +128,36 @@ export const WOMENS_LEG_REGRESSION: Record<LegKey, LinearFit> = {
 };
 
 /**
- * Men's leg keys, ASSUMED until the men's ANSUR II re-fit: each is the ratio of
- * the ANSUR II male means (4,082 men; mean key / mean seat circumference for the
- * girths, / mean stature for the rest). Girths ride on the men's hips estimate so
- * they grow with weight; heights and the front rise are fractions of height.
+ * Men's leg keys: least squares on height and weight over the ANSUR II male public
+ * file (4,082 men), the same columns and method as WOMENS_LEG_REGRESSION, fitted
+ * 2026-11-21. ANSUR II column, R², residual SD:
+ *  - thighCm: "thighcircumference".                                      R² 0.85, SD 2.26 cm
+ *  - kneeCm: "lowerthighcircumference".                                  R² 0.78, SD 1.49 cm
+ *  - calfCm: "calfcircumference".                                        R² 0.71, SD 1.61 cm
+ *  - heelAnkleCm: "heelanklecircumference".                              R² 0.62, SD 1.02 cm
+ *  - frontRiseCm: "crotchlengthomphalion" − "crotchlengthposterioromphalion". Weak: R² 0.42, SD 2.65 cm
+ *  - waistHeightCm: "waistheightomphalion".                              R² 0.84, SD 2.07 cm
+ *  - hipHeightCm: "buttockheight".                                       R² 0.68, SD 2.81 cm
+ *  - kneeHeightCm: "kneeheightmidpatella".                               R² 0.69, SD 1.55 cm
+ *  - ankleHeightCm: "lateralmalleolusheight". Weak R², small spread.     R² 0.25, SD 0.49 cm
  */
-export const MENS_LEG_RATIO = {
-  // × hipsCm
-  thigh: 0.61,
-  knee: 0.4,
-  calf: 0.385,
-  // × heightCm
-  heelAnkle: 0.196,
-  frontRise: 0.152,
-  waistHeight: 0.601,
-  hipHeight: 0.505,
-  kneeHeight: 0.278,
-  // male mean lateralmalleolusheight 7.29 cm / mean stature 175.6 cm
-  ankleHeight: 0.0415,
+export const MENS_LEG_REGRESSION: Record<LegKey, LinearFit> = {
+  thighCm: { intercept: 59.4745, perCm: -0.1836, perKg: 0.4125, residualSdCm: 2.26 },
+  kneeCm: { intercept: 34.419, perCm: -0.0658, perKg: 0.2112, residualSdCm: 1.49 },
+  calfCm: { intercept: 35.0962, perCm: -0.0684, perKg: 0.1888, residualSdCm: 1.61 },
+  heelAnkleCm: { intercept: 12.1699, perCm: 0.0966, perKg: 0.0609, residualSdCm: 1.02 },
+  frontRiseCm: { intercept: 21.5141, perCm: -0.0539, perKg: 0.1707, residualSdCm: 2.65 },
+  waistHeightCm: { intercept: -20.437, perCm: 0.7448, perKg: -0.0551, residualSdCm: 2.07 },
+  hipHeightCm: { intercept: -18.1947, perCm: 0.6169, perKg: -0.0158, residualSdCm: 2.81 },
+  kneeHeightCm: { intercept: -11.3032, perCm: 0.343, perKg: -0.0011, residualSdCm: 1.55 },
+  ankleHeightCm: { intercept: 1.1731, perCm: 0.031, perKg: 0.0079, residualSdCm: 0.49 },
 };
 
 /**
  * Navel-to-crotch height ÷ front rise (along the body): how far a waistband drops
  * for each cm of rise it's short of the body's own. Women's 0.71 from ANSUR II
- * female means (19.8 cm vertical over 27.9 cm). Men's 0.79 from the male means,
- * ASSUMED until the men's re-fit. Used by fit/pants.ts bandHeight().
+ * female means (19.8 cm vertical over 27.9 cm). Men's 0.79 from the ANSUR II male
+ * means (navel height − crotch height over front rise). Used by fit/pants.ts bandHeight().
  */
 export const RISE_VERTICAL_RATIO: Record<BodyType, number> = { womens: 0.71, mens: 0.79 };
 
@@ -246,7 +251,7 @@ function estimateFromSize(bodyType: BodyType, heightCm: number, weightKg: number
       shoulderWidthCm: heightCm * WOMENS_RATIO.shoulderWidth,
       armLengthCm: heightCm * WOMENS_RATIO.armLength,
       torsoLengthCm: heightCm * WOMENS_RATIO.torsoLength,
-      ...womensLegs(heightCm, weightKg),
+      ...legsFrom(WOMENS_LEG_REGRESSION, heightCm, weightKg),
     };
   }
   const { ref, bmiExponent, heightExponent, ratio } = MENS_MODEL;
@@ -262,13 +267,12 @@ function estimateFromSize(bodyType: BodyType, heightCm: number, weightKg: number
     shoulderWidthCm: heightCm * ratio.shoulderWidth,
     armLengthCm: heightCm * ratio.armLength,
     torsoLengthCm: heightCm * ratio.torsoLength,
-    ...mensLegs(heightCm, hipsCm),
+    ...legsFrom(MENS_LEG_REGRESSION, heightCm, weightKg),
   };
 }
 
-function womensLegs(heightCm: number, weightKg: number): Record<LegKey, number> {
-  const r = WOMENS_LEG_REGRESSION;
-  const fit = (key: LegKey) => linear(r[key], heightCm, weightKg, LEG_ESTIMATE_LIMITS[key]);
+function legsFrom(table: Record<LegKey, LinearFit>, heightCm: number, weightKg: number): Record<LegKey, number> {
+  const fit = (key: LegKey) => linear(table[key], heightCm, weightKg, LEG_ESTIMATE_LIMITS[key]);
   return {
     thighCm: fit('thighCm'),
     kneeCm: fit('kneeCm'),
@@ -279,22 +283,6 @@ function womensLegs(heightCm: number, weightKg: number): Record<LegKey, number> 
     hipHeightCm: fit('hipHeightCm'),
     kneeHeightCm: fit('kneeHeightCm'),
     ankleHeightCm: fit('ankleHeightCm'),
-  };
-}
-
-function mensLegs(heightCm: number, hipsCm: number): Record<LegKey, number> {
-  const r = MENS_LEG_RATIO;
-  const clamp = (key: LegKey, v: number) => Math.min(LEG_ESTIMATE_LIMITS[key].max, Math.max(LEG_ESTIMATE_LIMITS[key].min, v));
-  return {
-    thighCm: clamp('thighCm', r.thigh * hipsCm),
-    kneeCm: clamp('kneeCm', r.knee * hipsCm),
-    calfCm: clamp('calfCm', r.calf * hipsCm),
-    heelAnkleCm: clamp('heelAnkleCm', r.heelAnkle * heightCm),
-    frontRiseCm: clamp('frontRiseCm', r.frontRise * heightCm),
-    waistHeightCm: clamp('waistHeightCm', r.waistHeight * heightCm),
-    hipHeightCm: clamp('hipHeightCm', r.hipHeight * heightCm),
-    kneeHeightCm: clamp('kneeHeightCm', r.kneeHeight * heightCm),
-    ankleHeightCm: clamp('ankleHeightCm', r.ankleHeight * heightCm),
   };
 }
 

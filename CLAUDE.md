@@ -30,7 +30,8 @@ well-named modules over clever ones.
 app/src/
   domain/        pure TypeScript, no React, never imports from ui/
     units.ts     cm/in, kg/lb conversion. Everything internal is cm and kg.
-    body/        estimateBody(input) -> BodyModel (men's power law; women's ANSUR II regressions),
+    body/        estimateBody(input) -> BodyModel (men's power law for the torso; women's ANSUR II regressions;
+                 both sexes' leg keys ANSUR II regressions),
                  braSize.ts (parse "34DD", US/UK cups, bust estimate)
     garments/    types.ts (schema), seed.json, normalize.ts (printed -> cm + provenance),
                  categories.ts (type -> template: tee | shirt | knit | pants | shorts | skirt | jacket | dress | leggings; CategorySpec data rules, weightOf),
@@ -199,12 +200,13 @@ inputs/outputs and unit tests. UI only calls their public functions.
 - A cup above C widens the torso-length spread (`CUP_TORSO_SD_CM_PER_IN`) — an assumption,
   never a shift in the length itself.
 - Leg keys (pants; estimated only, none can be entered yet): thigh, knee (just above it), calf,
-  heel–ankle, front rise, and navel / hip-line (fullest seat) / knee heights. Women's are ANSUR II
-  regressions (`WOMENS_LEG_REGRESSION`); men's are **assumed** ratios of the ANSUR II male means
-  (`MENS_LEG_RATIO`: girths × the hips estimate, the rest × height) until the men's re-fit.
+  heel–ankle, front rise, and navel / hip-line (fullest seat) / knee heights. Both are least squares
+  on height and weight over ANSUR II: `WOMENS_LEG_REGRESSION` (female file) and `MENS_LEG_REGRESSION`
+  (male file, 4,082 men), each cited with R² and residual SD; spreads are the residual + 0.5 cm,
+  rounded up to the next half. The men's inseam is still `0.45 × height` (not re-fitted).
   Heights are kept in order (ankle < knee < crotch < hip line < navel); an entered inseam never moves.
 - Ankle height (`ankleHeightCm`, floor to the ankle bone, leggings): women's ANSUR II
-  `lateralmalleolusheight` regression (R² 0.19, SD 0.46 cm); men's 0.0415 × height, assumed.
+  `lateralmalleolusheight` regression (R² 0.19, SD 0.46 cm); men's the same column (R² 0.25, SD 0.49 cm).
 
 ## Personal fit and odds (source of truth is `domain/fit/`)
 - Zone labels stay objective. The **verdict** is personal: fits how you like / a bit snugger /

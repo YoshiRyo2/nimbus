@@ -3,7 +3,7 @@ import { inToCm } from '../units';
 import {
   estimateBody,
   LEG_ESTIMATE_LIMITS,
-  MENS_LEG_RATIO,
+  MENS_LEG_REGRESSION,
   MENS_MODEL,
   validateBodyInput,
   WOMENS_LEG_REGRESSION,
@@ -145,6 +145,7 @@ describe('leg keys (pants)', () => {
   it('come after the original keys, in a fixed order', () => {
     expect(BODY_MEASUREMENT_KEYS.slice(7)).toEqual([...LEG_KEYS]);
     expect(Object.keys(WOMENS_LEG_REGRESSION).sort()).toEqual([...LEG_KEYS].sort());
+    expect(Object.keys(MENS_LEG_REGRESSION).sort()).toEqual([...LEG_KEYS].sort());
   });
 
   it("women's leg keys follow the ANSUR II regressions", () => {
@@ -158,17 +159,28 @@ describe('leg keys (pants)', () => {
     expect(m.ankleHeightCm).toBeCloseTo(6.28, 2);
   });
 
-  it("men's leg keys are assumed ratios (girths of the hips, heights of the height)", () => {
-    const { measurements: m } = estimateBody(average);
-    expect(m.thighCm).toBeCloseTo(MENS_LEG_RATIO.thigh * 103);
-    expect(m.kneeCm).toBeCloseTo(0.4 * 103);
-    expect(m.calfCm).toBeCloseTo(0.385 * 103);
-    expect(m.heelAnkleCm).toBeCloseTo(0.196 * 176);
-    expect(m.frontRiseCm).toBeCloseTo(0.152 * 176);
-    expect(m.waistHeightCm).toBeCloseTo(0.601 * 176);
-    expect(m.hipHeightCm).toBeCloseTo(0.505 * 176);
-    expect(m.kneeHeightCm).toBeCloseTo(0.278 * 176);
-    expect(m.ankleHeightCm).toBeCloseTo(0.0415 * 176);
+  it("men's leg keys follow the ANSUR II male regressions", () => {
+    const { measurements: m } = estimateBody(average); // 176 cm, 85 kg
+    expect(m.thighCm).toBeCloseTo(62.22, 1);
+    expect(m.kneeCm).toBeCloseTo(40.79, 1);
+    expect(m.calfCm).toBeCloseTo(39.11, 1);
+    expect(m.heelAnkleCm).toBeCloseTo(34.35, 1);
+    expect(m.frontRiseCm).toBeCloseTo(26.54, 1);
+    expect(m.waistHeightCm).toBeCloseTo(105.96, 1);
+    expect(m.hipHeightCm).toBeCloseTo(89.04, 1);
+    expect(m.kneeHeightCm).toBeCloseTo(48.97, 1);
+    expect(m.ankleHeightCm).toBeCloseTo(7.3, 1);
+  });
+
+  it("men's leg girths come from height and weight, not an entered hips", () => {
+    const a = estimateBody(average).measurements;
+    const b = estimateBody({ ...average, overrides: { hipsCm: 120 } }).measurements;
+    expect([b.thighCm, b.kneeCm, b.calfCm]).toEqual([a.thighCm, a.kneeCm, a.calfCm]);
+  });
+
+  it("men's leg girths grow with weight", () => {
+    const light = estimateBody({ ...average, weightKg: 65 }).measurements;
+    expect(light.thighCm).toBeLessThan(estimateBody(average).measurements.thighCm - 7);
   });
 
   it("men's existing keys don't move", () => {
